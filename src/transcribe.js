@@ -3,7 +3,7 @@
 // ============================================
 // Integra Google Gemini REST API para convertir notas de voz a texto
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
 
 /**
  * Transcribe un buffer de audio a texto utilizando Gemini 1.5 Flash

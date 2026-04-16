@@ -1,4 +1,4 @@
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
 
 const SYSTEM_INSTRUCTION = `
 Eres Patricia, la asesora virtual experta de servicio al cliente de "Saratex Sublimación Gran Formato SAS" en Bogotá, Colombia.
