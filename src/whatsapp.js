@@ -122,9 +122,53 @@ async function sendMessage(to, payload) {
   }
 }
 
+/**
+ * Descargar archivo multimedia de WhatsApp devolviendo buffer y mimeType
+ */
+async function downloadMedia(mediaId) {
+  const token = process.env.WHATSAPP_TOKEN;
+
+  try {
+    // 1. Obtener URL de descarga temporal
+    const urlResponse = await fetch(`${GRAPH_API_URL}/${mediaId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    const urlData = await urlResponse.json();
+    if (!urlResponse.ok) {
+      console.error('❌ Error obteniendo URL de audio:', urlData);
+      return null;
+    }
+
+    // 2. Descargar el archivo binario
+    const mediaResponse = await fetch(urlData.url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!mediaResponse.ok) {
+      console.error('❌ Error descargando binario de Meta');
+      return null;
+    }
+
+    const arrayBuffer = await mediaResponse.arrayBuffer();
+    return {
+      buffer: Buffer.from(arrayBuffer),
+      mimeType: urlData.mime_type,
+    };
+  } catch (err) {
+    console.error('❌ Error en downloadMedia:', err.message);
+    return null;
+  }
+}
+
 module.exports = {
   sendText,
   sendList,
   sendButtons,
   markAsRead,
+  downloadMedia,
 };

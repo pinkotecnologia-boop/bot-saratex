@@ -6,6 +6,8 @@
 require('dotenv').config();
 const express = require('express');
 const flow = require('./flow');
+const { transcribeAudio } = require('./transcribe');
+const wa = require('./whatsapp');
 
 const app = express();
 app.use(express.json());
@@ -74,6 +76,8 @@ app.post('/webhook', async (req, res) => {
 
           // Extraer contenido según tipo de mensaje
           let content = {};
+          let effectiveMessageType = messageType;
+          
           switch (messageType) {
             case 'text':
               content = message.text || {};
@@ -84,16 +88,47 @@ app.post('/webhook', async (req, res) => {
             case 'button':
               content = message.button || {};
               break;
+            case 'audio':
+              console.log(`🎙️ Recibiendo nota de voz de ${phone}... procesando con IA`);
+              const mediaId = message.audio?.id;
+              
+              if (!process.env.GEMINI_API_KEY) {
+                console.log('⚠️ GEMINI_API_KEY no configurada. Audio ignorado.');
+                continue;
+              }
+              
+              if (mediaId) {
+                const mediaObj = await wa.downloadMedia(mediaId);
+                if (mediaObj && mediaObj.buffer) {
+                  const texto = await transcribeAudio(mediaObj.buffer, mediaObj.mimeType);
+                  if (texto) {
+                    console.log(`📝 Transcripción: "${texto}"`);
+                    effectiveMessageType = 'text'; // Engañamos al motor
+                    content = { body: texto };
+                  } else {
+                    console.log('❌ Falló la transcripción.');
+                    continue;
+                  }
+                } else {
+                  console.log('❌ Falló la descarga del audio.');
+                  continue;
+                }
+              } else {
+                continue;
+              }
+              break;
             default:
-              // Tipos no soportados (imagen, audio, etc.)
+              // Tipos no soportados (imagen, sticker, etc.)
               console.log(`📎 Mensaje tipo '${messageType}' de ${phone} — no procesado`);
               continue;
           }
 
-          console.log(`\n📨 Mensaje de ${phone} (${senderName || 'desconocido'}) — tipo: ${messageType}`);
+          if (messageType !== 'audio') {
+            console.log(`\n📨 Mensaje de ${phone} (${senderName || 'desconocido'}) — tipo: ${messageType}`);
+          }
 
           // Procesar mensaje a través del flujo conversacional
-          await flow.processMessage(phone, senderName, messageType, content, messageId);
+          await flow.processMessage(phone, senderName, effectiveMessageType, content, messageId);
         }
       }
     }
